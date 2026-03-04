@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+if(!sessionStorage.getItem("adminLoggedIn")){
+  window.location.href="admin-login.html";
+}
+
+// Auto logout on refresh
+window.onload = ()=>{
+  sessionStorage.removeItem("adminLoggedIn");
+};
+</script>
+  <script>
+  const ADMIN_PASSWORD = "admin123";
+
+  // If not logged in, ask for password
+  if (!sessionStorage.getItem("adminLoggedIn")) {
+
+    const entered = prompt("Enter Admin Password:");
+
+    if (entered === ADMIN_PASSWORD) {
+      sessionStorage.setItem("adminLoggedIn", "true");
+    } else {
+      alert("Access Denied!");
+      window.location.href = "index.html";
+    }
+  }
+
+  // If page refreshed, force logout
+  window.onload = () => {
+    sessionStorage.removeItem("adminLoggedIn");
+  };
+</script>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background:#1c1c1c;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+}
+.container{
+  width:400px;
+  background:rgba(255,255,255,0.1);
+  padding:30px;
+  border-radius:20px;
+}
+input{
+  width:100%;
+  padding:8px;
+  margin-bottom:10px;
+  border-radius:8px;
+  border:none;
+}
+button{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#00e676;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Admin Settings</h2>
+
+  <label>Good Max AQI</label>
+  <input type="number" id="goodMax">
+
+  <label>Moderate Max AQI</label>
+  <input type="number" id="moderateMax">
+
+  <label>Poor Max AQI</label>
+  <input type="number" id="poorMax">
+
+  <label>Temperature Alert Limit</label>
+  <input type="number" id="tempLimit">
+
+  <label>Humidity Alert Limit</label>
+  <input type="number" id="humLimit">
+
+  <label>
+    <input type="checkbox" id="alertsEnabled">
+    Enable Alerts
+  </label>
+
+  <button onclick="saveSettings()">Save Settings</button>
+
+  <br><br>
+  <a href="index.html" style="color:white;">⬅ Back to Dashboard</a>
+</div>
+
+<script>
+
+function loadSettings(){
+  return JSON.parse(localStorage.getItem("aqiSettings")) || {
+    goodMax:50,
+    moderateMax:100,
+    poorMax:200,
+    tempLimit:40,
+    humLimit:80,
+    alertsEnabled:true
+  };
+}
+
+function populateFields(){
+  const s = loadSettings();
+  document.getElementById("goodMax").value = s.goodMax;
+  document.getElementById("moderateMax").value = s.moderateMax;
+  document.getElementById("poorMax").value = s.poorMax;
+  document.getElementById("tempLimit").value = s.tempLimit;
+  document.getElementById("humLimit").value = s.humLimit;
+  document.getElementById("alertsEnabled").checked = s.alertsEnabled;
+}
+
+function saveSettings(){
+  const settings = {
+    goodMax: parseInt(document.getElementById("goodMax").value),
+    moderateMax: parseInt(document.getElementById("moderateMax").value),
+    poorMax: parseInt(document.getElementById("poorMax").value),
+    tempLimit: parseInt(document.getElementById("tempLimit").value),
+    humLimit: parseInt(document.getElementById("humLimit").value),
+    alertsEnabled: document.getElementById("alertsEnabled").checked
+  };
+
+  localStorage.setItem("aqiSettings", JSON.stringify(settings));
+  alert("Settings Saved Successfully!");
+}
+
+populateFields();
+
+</script>
+
+</body>
+</html>
