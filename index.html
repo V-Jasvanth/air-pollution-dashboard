@@ -6,6 +6,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
+/* ---------- GLOBAL ---------- */
 body{
   margin:0;
   font-family:'Poppins',sans-serif;
@@ -19,6 +20,54 @@ body{
   background:#f4f4f4;
   color:#222;
 }
+/* ---------- WELCOME SCREEN ---------- */
+#welcomeScreen{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:black;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+.welcome-title{
+  color:white;
+  font-size:50px;
+  letter-spacing:4px;
+  opacity:0;
+  transform:scale(0.8);
+  animation:titleIntro 2s ease forwards;
+}
+.welcome-sub{
+  margin-top:15px;
+  color:#aaa;
+  opacity:0;
+  animation:subtitleIntro 2s ease forwards;
+  animation-delay:1.5s;
+}
+@keyframes titleIntro{
+  0%{
+    opacity:0;
+    transform:scale(0.8);
+  }
+  60%{
+    opacity:1;
+    transform:scale(1.1);
+  }
+  100%{
+    opacity:1;
+    transform:scale(1);
+  }
+}
+@keyframes subtitleIntro{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+/* ---------- DASHBOARD ---------- */
 .container{
   width:90%;
   max-width:1100px;
@@ -42,6 +91,7 @@ body{
   border-radius:15px;
   backdrop-filter:blur(8px);
 }
+
 .dark .card{
   background:rgba(255,255,255,0.1);
 }
@@ -69,145 +119,152 @@ canvas{
 }
 </style>
 </head>
-
 <body class="dark">
-
-<div class="container">
-
-  <div class="top-bar">
-    <h2>IoT Air Pollution Monitoring</h2>
-    <div>
-      <button class="toggle-btn" onclick="toggleTheme()">🌗 Toggle Mode</button>
-      <a href="admin-login.html" style="margin-left:15px;">⚙ Admin</a>
-    </div>
-  </div>
-
-  <div class="dashboard">
-    <div class="card">
-      <h3>AQI</h3>
-      <div class="value" id="aqi">--</div>
-      <div id="status">--</div>
-    </div>
-
-    <div class="card">
-      <h3>Temperature</h3>
-      <div class="value" id="temp">--</div>
-    </div>
-
-    <div class="card">
-      <h3>Humidity</h3>
-      <div class="value" id="hum">--</div>
-    </div>
-
-    <div class="card">
-      <h3>Alert</h3>
-      <div class="value" id="alertState">--</div>
-    </div>
-  </div>
-
-  <canvas id="aqiChart"></canvas>
-
+<!-- ---------- WELCOME INTRO ---------- -->
+<div id="welcomeScreen">
+<h1 class="welcome-title">
+IoT Air Pollution Monitoring
+</h1>
+<div class="welcome-sub">
+Smart Environmental Monitoring System
 </div>
-
+</div>
+<div class="container" id="mainContent" style="opacity:0;transition:1s;">
+<div class="top-bar">
+<h2>IoT Air Pollution Monitoring</h2>
+<div>
+<button class="toggle-btn" onclick="toggleTheme()">🌗 Toggle Mode</button>
+<a href="admin-login.html" style="margin-left:15px;">⚙ Admin</a>
+</div>
+</div>
+<div class="dashboard">
+<div class="card">
+<h3>AQI</h3>
+<div class="value" id="aqi">--</div>
+<div id="status">--</div>
+</div>
+<div class="card">
+<h3>Temperature</h3>
+<div class="value" id="temp">--</div>
+</div>
+<div class="card">
+<h3>Humidity</h3>
+<div class="value" id="hum">--</div>
+</div>
+<div class="card">
+<h3>Alert</h3>
+<div class="value" id="alertState">--</div>
+</div>
+</div>
+<canvas id="aqiChart"></canvas>
+</div>
 <script>
-/* ---------------- THEME ---------------- */
+/* ---------- INTRO TRANSITION ---------- */
+setTimeout(()=>{
+document.getElementById("welcomeScreen").style.opacity="0";
+setTimeout(()=>{
+document.getElementById("welcomeScreen").style.display="none";
+document.getElementById("mainContent").style.opacity="1";
+},1000);
+},3000);
+/* ---------- THEME ---------- */
 function toggleTheme(){
-  const body = document.body;
-  body.classList.toggle("dark");
-  body.classList.toggle("light");
-  localStorage.setItem("theme", body.classList.contains("dark") ? "dark" : "light");
+const body=document.body;
+body.classList.toggle("dark");
+body.classList.toggle("light");
+localStorage.setItem("theme",body.classList.contains("dark")?"dark":"light");
 }
-
-window.onload = ()=>{
-  const saved = localStorage.getItem("theme");
-  if(saved){
-    document.body.className = saved;
-  }
+window.onload=()=>{
+const saved=localStorage.getItem("theme");
+if(saved){
+document.body.className=saved;
 }
-
-/* ---------------- SETTINGS ---------------- */
+}
+/* ---------- SETTINGS ---------- */
 function loadSettings(){
-  return JSON.parse(localStorage.getItem("aqiSettings")) || {
-    goodMax:50,
-    moderateMax:100,
-    poorMax:200,
-    tempLimit:40,
-    humLimit:80,
-    alertsEnabled:true
-  };
+return JSON.parse(localStorage.getItem("aqiSettings")) || {
+goodMax:50,
+moderateMax:100,
+poorMax:200,
+tempLimit:40,
+humLimit:80,
+alertsEnabled:true
+};
 }
-
-/* ---------------- CHART ---------------- */
-const ctx = document.getElementById('aqiChart').getContext('2d');
-let aqiData = [];
-let labels = [];
-
-const chart = new Chart(ctx, {
-  type:'line',
-  data:{
-    labels:labels,
-    datasets:[{
-      label:'AQI History',
-      data:aqiData,
-      borderColor:'#00e676',
-      borderWidth:2,
-      fill:false,
-      tension:0.3
-    }]
-  },
-  options:{
-    responsive:true,
-    scales:{
-      y:{beginAtZero:true,max:300}
-    }
-  }
+/* ---------- CHART ---------- */
+const ctx=document.getElementById('aqiChart').getContext('2d');
+let aqiData=[];
+let labels=[];
+const chart=new Chart(ctx,{
+type:'line',
+data:{
+labels:labels,
+datasets:[{
+label:'AQI History',
+data:aqiData,
+borderColor:'#00e676',
+borderWidth:2,
+fill:false,
+tension:0.3
+}]
+},
+options:{
+responsive:true,
+scales:{
+y:{beginAtZero:true,max:300}
+}
+}
 });
-/* ---------------- DASHBOARD UPDATE ---------------- */
-let countdown = 2;
+/* ---------- DASHBOARD UPDATE ---------- */
+let countdown=2;
 setInterval(()=>{
-  countdown--;
-  if(countdown === 0){
-    const settings = loadSettings();
-    const aqi = Math.floor(Math.random()*300);
-    const temp = (20 + Math.random()*20).toFixed(1);
-    const hum = (40 + Math.random()*40).toFixed(1);
-    let statusClass, statusText;
-    if(aqi <= settings.goodMax){
-      statusClass="good"; statusText="Good";
-    } else if(aqi <= settings.moderateMax){
-      statusClass="moderate"; statusText="Moderate";
-    } else if(aqi <= settings.poorMax){
-      statusClass="poor"; statusText="Poor";
-    } else {
-      statusClass="hazard"; statusText="Hazardous";
-    }
-    document.getElementById("aqi").innerText = aqi;
-    document.getElementById("aqi").className = "value " + statusClass;
-    document.getElementById("status").innerText = statusText;
-    document.getElementById("status").className = statusClass;
-    document.getElementById("temp").innerText = temp + " °C";
-    document.getElementById("hum").innerText = hum + " %";
-    let alertMsg="Normal";
-    if(settings.alertsEnabled){
-      if(aqi > settings.poorMax || temp > settings.tempLimit || hum > settings.humLimit){
-        alertMsg="ALERT";
-      }
-    }
-
-    document.getElementById("alertState").innerText = alertMsg;
-    document.getElementById("alertState").className =
-      alertMsg==="ALERT" ? "value hazard" : "value good";
-
-    // Update chart
-    if(aqiData.length > 14){
-      aqiData.shift();
-      labels.shift();
-    }
-    aqiData.push(aqi);
-    labels.push(new Date().toLocaleTimeString());
-    chart.update();
-    countdown = 2;
-  }
+countdown--;
+if(countdown===0){
+const settings=loadSettings();
+const aqi=Math.floor(Math.random()*300);
+const temp=(20+Math.random()*20).toFixed(1);
+const hum=(40+Math.random()*40).toFixed(1);
+let statusClass,statusText;
+if(aqi<=settings.goodMax){
+statusClass="good";
+statusText="Good";
+}
+else if(aqi<=settings.moderateMax){
+statusClass="moderate";
+statusText="Moderate";
+}
+else if(aqi<=settings.poorMax){
+statusClass="poor";
+statusText="Poor";
+}
+else{
+statusClass="hazard";
+statusText="Hazardous";
+}
+document.getElementById("aqi").innerText=aqi;
+document.getElementById("aqi").className="value "+statusClass;
+document.getElementById("status").innerText=statusText;
+document.getElementById("status").className=statusClass;
+document.getElementById("temp").innerText=temp+" °C";
+document.getElementById("hum").innerText=hum+" %";
+let alertMsg="Normal";
+if(settings.alertsEnabled){
+if(aqi>settings.poorMax || temp>settings.tempLimit || hum>settings.humLimit){
+alertMsg="ALERT";
+}
+}
+document.getElementById("alertState").innerText=alertMsg;
+document.getElementById("alertState").className=
+alertMsg==="ALERT"?"value hazard":"value good";
+if(aqiData.length>14){
+aqiData.shift();
+labels.shift();
+}
+aqiData.push(aqi);
+labels.push(new Date().toLocaleTimeString());
+chart.update();
+countdown=2;
+}
 },1000);
 </script>
 </body>
